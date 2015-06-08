@@ -2,7 +2,24 @@ require_relative 'spec_helper.rb'
 require 'hue_switch'
 
 describe "Switch" do
-	context "New Switch without parameters" do
+	context "user not authorized" do
+		it "raises an error" do
+			class SwitchTest < Switch
+				def initialize
+					@user = "043658A90"
+					@ip = HTTParty.get("https://www.meethue.com/api/nupnp").first["internalipaddress"]
+					unless HTTParty.get("http://#{@ip}/api/#{@user}/config").include?("whitelist")
+						if HTTParty.post("http://#{@ip}/api", :body => ({:devicetype => "Hue_Switch", :username=>"1234567890"}).to_json).first.include?("error")
+							raise "You need to press the link button on the bridge and run again"
+						end
+					end
+				end
+			end
+			expect{SwitchTest.new}.to raise_error(RuntimeError)
+		end
+	end
+
+	context "new Switch without parameters" do
 		it "creates a new Switch" do
 			Switch.new.class.should == Switch
 		end
@@ -38,6 +55,13 @@ describe "Switch" do
 			@switch.lights groups[rand(groups.length)].to_sym
 			result = @switch.on
 			result.first.keys == ["success"]
+		end
+
+		it "controls a single light" do
+			lights = @switch.instance_variable_get(:@lights).keys
+			@switch.light lights[rand(lights.length)].to_sym
+			result = @switch.on.first
+			expect {result.to respond_to(:to_i) }
 		end
 	end
 end
