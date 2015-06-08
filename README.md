@@ -101,10 +101,6 @@ Switches can be scheduled:
 switch.schedule :on, "8:30 tonight"
 switch.schedule :off, "in three minutes"  # "tomorrow", "next week"
 ```
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/master
 1. Lights will flash once to let you know the scene was successfully sceduled.
 2. Schedules can be set a week up to a week ahead of time. You can specify days of the week (e.g, monday, next tuesday) but you cannot specify a date.
 
