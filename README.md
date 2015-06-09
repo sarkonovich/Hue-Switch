@@ -102,6 +102,7 @@ switch.schedule :on, "eight thirty tonight"
 switch.schedule :on, "June 9 at 08:00"
 switch.schedule :off, "in three minutes"  # "tomorrow", "next week"
 ```
+
 ####Delete the schedule(s) created by the switch:
 
 ```ruby
@@ -152,7 +153,7 @@ Will save the current light configuration to a scene on the bridge.
 ```ruby
 switch.voice "save scene as romantic dinner"
 ```
-note: scenes saved with \#voice will be applied to all lights.
+note: scenes saved with \#voice will affect all lights.
 ######Schedules
 Scheduling syntax is extremely flexible. Any command can be scheduled. With \#voice you can schedule up to a week ahead of time (e.g., "next Monday") and dates ("June 22") are not supported
 ```ruby

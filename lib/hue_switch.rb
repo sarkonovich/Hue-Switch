@@ -37,7 +37,6 @@ class Switch
 		end
 	end
 
-
 	def hue (numeric_value)
 		self.body.delete(:scene)
 		self.body.delete(:ct)
@@ -146,6 +145,7 @@ class Switch
 		scene_on_off if !self.body[:scene].nil?	
 	end
 
+	# Parses times in words (e.g., "eight forty five") to standard HH:MM format
 	def parse_time(string)
 		string.sub!(" noon", " twelve in the afternoon")
 		string.sub!("midnight", "twelve in the morning")
@@ -235,7 +235,7 @@ class Switch
 		self.schedule_params = nil
 	end
 
-	#The following two methods are required to use Switch for Zach Feldman's Alexa-home*
+	#The following two methods are required to use Switch with Zach Feldman's Alexa-home*
 	def wake_words
 		["light", "lights", "scene", "seen", "flash"]
 	end
@@ -247,7 +247,7 @@ class Switch
 		self.voice command
 	end
 	
-	#These methods allow access to most of the Switch class functionality by supplying a single string.
+	#These rest of the methods allow access to most of the Switch class functionality by supplying a single string.
 	def parse_leading(methods)
 		methods.each do |l|
 			capture = (self.command.match (/\b#{l}\s\w+/)).to_s.split(' ')
