@@ -12,7 +12,7 @@ Or install it yourself as:
 
     $ gem install hue_switch
     
-#####Note: There are significant changes between .9 versions and 1.0.0. Some basic commands work slightly differently. Random Colors have been removed. Verion 1.0.0 includes a new method -- #voice -- that allows most Switch methods to be passed as a string. Please see end of README for details.
+#####Note: There are significant changes between .9 versions and 1.0.0. Some basic commands work slightly differently. Random Colors have been removed. Version 1.0.0 includes a new method -- #voice -- that allows most Switch methods to be passed as a string. Please see end of README for details.
 
 ## Usage
 A Hue Switch is designed control Hue lights, groups, and scenes. You can schedule a Switch. You can save a Switch as a Hue Scene on the bridge.
@@ -98,16 +98,10 @@ switch.reset
 Switches can be scheduled:
 
 ```ruby
-switch.schedule :on, "8:30 tonight"
+switch.schedule :on, "eight thirty tonight"
+switch.schedule :on, "June 9 at 08:00"
 switch.schedule :off, "in three minutes"  # "tomorrow", "next week"
 ```
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/master
-1. Lights will flash once to let you know the scene was successfully sceduled.
-2. Schedules can be set a week up to a week ahead of time. You can specify days of the week (e.g, monday, next tuesday) but you cannot specify a date.
-
 ####Delete the schedule(s) created by the switch:
 
 ```ruby
@@ -132,7 +126,7 @@ The voice method takes a single string and is meant to control the Switch class 
 
 Because #voice takes a string meant to be spoken, there are important differences between using switch and switch.voice:
 
-1. switch.voice takes no numeric inputs. Brightness and Saturation are set on a scale of one to ten. Fade times for lights are similarly specified in words by seconds. See examples below.
+1. switch.voice takes no numeric inputs. Brightness and Saturation are set on a scale of one to ten. Fade times for lights are similarly specified in words by seconds. See examples below. Scheduling has some restrictions.
 2. Colors can only be specified by name (i.e., 'hue 40000' is not available using #voice).
 3. Only a single light can be specified after a 'light' command.
 4. \#reset and #delete_scenes! methods not available with #voice
@@ -158,8 +152,9 @@ Will save the current light configuration to a scene on the bridge.
 ```ruby
 switch.voice "save scene as romantic dinner"
 ```
+note: scenes saved with \#voice will be applied to all lights.
 ######Schedules
-Scheduling syntax is extremely flexible. Any command can be scheduled. You can schedule up to a week ahead of time.
+Scheduling syntax is extremely flexible. Any command can be scheduled. With \#voice you can schedule up to a week ahead of time (e.g., "next Monday") and dates ("June 22") are not supported
 ```ruby
 switch.voice "schedule kitchen lights color blue in ten minutes"
 switch.voice "start colorloop bedside light schedule at eight fifty three next Friday"
