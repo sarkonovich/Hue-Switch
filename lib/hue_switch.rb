@@ -121,9 +121,9 @@ class Switch
 	end
 
 	def scene_on_off
-		if self.body[:on]=true
+		if self.body[:on] == true
 			HTTParty.put("http://#{@ip}/api/#{@user}/groups/#{self._group}/action", :body => (self.body.select { |s| s == :scene }).to_json)
-		elsif self.body[:off]=false
+		elsif self.body[:off] == false
 			# turn off individual lights in the scene
 			(HTTParty.get("http://#{@ip}/api/#{@user}/scenes"))[self.body[:scene]]["lights"].each do |l|
 				HTTParty.put("http://#{@ip}/api/#{@user}/lights/#{l}/state", :body => ({:on=>false}).to_json)
