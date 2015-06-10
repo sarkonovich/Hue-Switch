@@ -56,6 +56,13 @@ Colors can be specified by
 
 2. Numeric value of hue [0-65535], or mired color value [0-500]
 
+```ruby
+switch.mired 250
+switch.hue 45000
+switch.color :green
+switch.color :concentrate
+```
+
 Groups are indicated by **:lights**, single lights by **:light**.
 
 A switch can control multiple individual lights, even if they are not in a group.
@@ -153,7 +160,7 @@ Will save the current light configuration to a scene on the bridge.
 ```ruby
 switch.voice "save scene as romantic dinner"
 ```
-note: scenes saved with \#voice will affect all lights.
+note: scenes saved with \#voice will be affect all lights.
 ######Schedules
 Scheduling syntax is extremely flexible. Any command can be scheduled. With \#voice you can schedule up to a week ahead of time (e.g., "next Monday") and dates ("June 22") are not supported
 ```ruby

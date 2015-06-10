@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hue_switch (1.0.1)
+    hue_switch (1.0.3)
       chronic (~> 0.10.0)
       chronic_duration (~> 0)
       httparty (~> 0.13.0)
@@ -50,7 +50,7 @@ DEPENDENCIES
   bundler (~> 1.9)
   hue_switch!
   rake (~> 10.0)
-  rspec (~> 2.4.0)
+  rspec (~> 2.4, >= 2.4.0)
 
 BUNDLED WITH
    1.10.3
