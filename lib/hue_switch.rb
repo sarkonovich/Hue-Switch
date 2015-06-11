@@ -282,7 +282,6 @@ class Switch
 
 	def parse_scene(scene_name)
 		scene_name.gsub!(' ','-') if scene_name.size > 1
-		scene_name.gsub!(/schedule-?/,'') if scene_name.include?('schedule')
 		self.send("scene", scene_name)
 	end
 	
@@ -292,6 +291,7 @@ class Switch
 	end
 
 	def parse_voice(string)
+		string.gsub!('schedule ','')
 		trailing = string.split(' ') & %w[lights light]
 		leading = string.split(' ') & %w[hue brightness saturation fade color]
 		dynamic = string.split(' ') & %w[colorloop alert]
@@ -307,7 +307,6 @@ class Switch
 	def voice(string)
 		self.reset
 		self.command << string
-		string.gsub!('schedule','')
 
 		parse_voice(string)
 
