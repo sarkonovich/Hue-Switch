@@ -3,13 +3,26 @@ require 'chronic_duration'
 require 'httparty'
 require 'numbers_in_words'
 require 'numbers_in_words/duck_punch'
+require 'timeout'
 
 class Switch
 	attr_accessor :command, :lights_array, :_group, :body, :schedule_params, :schedule_ids
 	def initialize(command = "", _group = 0, &block)
 
 		@user = "1234567890"
-		@ip = HTTParty.get("https://www.meethue.com/api/nupnp").first["internalipaddress"]
+		begin
+			Timeout::timeout(5) {
+				@ip = HTTParty.get("https://www.meethue.com/api/nupnp").first["internalipaddress"]
+			}
+		rescue Timeout::Error
+	  		"Time Out"
+		rescue NoMethodError
+		  	"Cannot Find Bridge"
+		rescue Errno::ECONNREFUSED
+		  	"connection refused"
+		rescue SocketError
+				"Cannot connect to local network"
+		end
 		
 		authorize_user
 		populate_switch
@@ -21,22 +34,6 @@ class Switch
 		self._group = "0"
 		self.body = {}
 		instance_eval(&block) if block_given?
-	end
-
-	def authorize_user
-		unless HTTParty.get("http://#{@ip}/api/#{@user}/config").include?("whitelist")
-			if HTTParty.post("http://#{@ip}/api", :body => ({:devicetype => "Hue_Switch", :username=>"1234567890"}).to_json).first.include?("error")
-				raise "You need to press the link button on the bridge and run again"
-			end
-		end
-	end
-
-	def populate_switch
-		@colors = {red: 65280, pink: 56100, purple: 52180, violet: 47188, blue: 46920, turquoise: 31146, green: 25500, yellow: 12750, orange: 8618}
-		@mired_colors = {candle: 500, relax: 467, reading: 346, neutral: 300, concentrate: 231, energize: 136}
-		@scenes = [] ; HTTParty.get("http://#{@ip}/api/#{@user}/scenes").keys.each { |k| @scenes.push(k) }
-		@groups = {} ; HTTParty.get("http://#{@ip}/api/#{@user}/groups").each { |k,v| @groups["#{v['name']}".downcase] = k } ; @groups["all"] = "0"
-		@lights = {} ; HTTParty.get("http://#{@ip}/api/#{@user}/lights").each { |k,v| @lights["#{v['name']}".downcase] = k }
 	end
 
 	def hue (numeric_value)
@@ -51,8 +48,11 @@ class Switch
 
 	def color(color_name)
 		clear_attributes
-		@colors.keys.include?(color_name.to_sym) ?
-		self.body[:hue] = @colors[color_name.to_sym] : self.body[:ct] = @mired_colors[color_name.to_sym]
+		if @colors.keys.include?(color_name.to_sym)
+			self.body[:hue] = @colors[color_name.to_sym]
+		else
+			self.body[:ct] = @mired_colors[color_name.to_sym]
+		end
 	end
 
 	def saturation(depth)
@@ -149,38 +149,7 @@ class Switch
 
 	# Parses times in words (e.g., "eight forty five") to standard HH:MM format
 
-	def numbers_to_times(numbers)
-		numbers.map!(&:in_numbers)
-		numbers.map!(&:to_s)
-		numbers.push("0") if numbers[1] == nil
-		numbers = numbers.shift + ':' + (numbers[0].to_i + numbers[1].to_i).to_s
-		numbers.gsub!(':', ':0') if numbers.split(":")[1].length < 2
-		numbers
-	end
-
-	def parse_time(string)
-		string.sub!(" noon", " twelve in the afternoon")
-		string.sub!("midnight", "twelve in the morning")
-		time_modifier = string.downcase.scan(/(evening)|(night|tonight)|(afternoon)|(pm)|(a.m.)|(morning)|(today)/).flatten.compact.first
-		guess = Time.now.strftime('%H').to_i >= 12 ?  "p.m." : "a.m."
-		time_modifier = time_modifier.nil? ? guess : time_modifier
-		day_modifier = string.scan(/(tomorrow)|(next )?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/).flatten.compact.join(' ')
-		numbers_in_words = string.scan(Regexp.union((1..59).map(&:in_words)))
-		set_time = numbers_to_times(numbers_in_words)
-		set_time = Chronic.parse(day_modifier +  ' ' + set_time + ' ' + time_modifier)
-	end
-
-	def set_time(string)
-		if string.scan(/ seconds?| minutes?| hours?| days?| weeks?/).any? 
-			set_time = Time.now + ChronicDuration.parse(string)
-		elsif string.scan(/\d/).any?
-			set_time = Chronic.parse(string)
-		else
-			set_time = parse_time(string)
-		end
-	end
-
-	def schedule (on_or_off = :default, string)
+	def schedule (string, on_or_off = :default)
 		self.body[:on] = true if on_or_off == :on
 		self.body[:on] = false if on_or_off == :off
 		set_time = set_time(string)
@@ -253,7 +222,24 @@ class Switch
 		self.voice command
 	end
 	
-	#The rest of the methods allow access to most of the Switch class functionality by supplying a single string.
+	#The rest of the methods allow access to most of the Switch class functionality by supplying a single string
+
+	def voice(string)
+		self.reset
+		self.command << string
+
+		parse_voice(string)
+
+		if self.command.include?("schedule")
+			state = string.match(/off|on/)[0].to_sym rescue nil
+			self.send("schedule", *[string, state])
+		else
+			string.include?(' off') ? self.send("off") : self.send("on")
+		end	
+	end
+
+	private
+	
 	def parse_leading(methods)
 		methods.each do |l|
 			capture = (self.command.match (/\b#{l}\s\w+/)).to_s.split(' ')
@@ -304,18 +290,57 @@ class Switch
 		parse_save_scene if self.command.scan(/save (scene|seen) as/).length > 0
 	end
 
-	def voice(string)
-		self.reset
-		self.command << string
+	def numbers_to_times(numbers)
+		numbers.map!(&:in_numbers)
+		numbers.map!(&:to_s)
+		numbers.push("0") if numbers[1] == nil
+		numbers = numbers.shift + ':' + (numbers[0].to_i + numbers[1].to_i).to_s
+		numbers.gsub!(':', ':0') if numbers.split(":")[1].length < 2
+		numbers
+	end
 
-		parse_voice(string)
+	def parse_time(string)
+		string.sub!(" noon", " twelve in the afternoon")
+		string.sub!("midnight", "twelve in the morning")
+		time_modifier = string.downcase.scan(/(evening)|(night|tonight)|(afternoon)|(pm)|(a.m.)|(am)|(p.m.)|(morning)|(today)/).flatten.compact.first
+		guess = Time.now.strftime('%H').to_i >= 12 ?  "p.m." : "a.m."
+		time_modifier = time_modifier.nil? ? guess : time_modifier
+		day_modifier = string.scan(/(tomorrow)|(next )?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/).flatten.compact.join(' ')
+		numbers_in_words = string.scan(Regexp.union((1..59).map(&:in_words)))
+		set_time = numbers_to_times(numbers_in_words)
+		set_time = Chronic.parse(day_modifier +  ' ' + set_time + ' ' + time_modifier)
+	end
 
-		if self.command.include?("schedule")
-			self.body[:on] = true if string.include?(' on')
-			self.body[:on] = false if string.include?(' off')
-			self.send("schedule", string)
+	def set_time(string)
+		if string.scan(/ seconds?| minutes?| hours?| days?| weeks?/).any? 
+			set_time = string.partition("in").last.strip!
+			set_time = Time.now + ChronicDuration.parse(string)
+		elsif string.scan(/\d/).any?
+			set_time = string.partition("at").last.strip!
+			set_time = Chronic.parse(set_time)
 		else
-			string.include?(' off') ? self.send("off") : self.send("on")
-		end	
+			set_time = string.partition("at").last.strip!
+			set_time = parse_time(set_time)
+		end
+	end
+
+	def authorize_user
+		begin
+			unless HTTParty.get("http://#{@ip}/api/#{@user}/config").include?("whitelist")
+				if HTTParty.post("http://#{@ip}/api", :body => ({:devicetype => "Hue_Switch", :username=>"1234567890"}).to_json).first.include?("error")
+					raise "You need to press the link button on the bridge and run again"
+				end
+			end
+		rescue Errno::ECONNREFUSED
+			"Cannot Reach Bridge"
+		end
+	end
+
+	def populate_switch
+		@colors = {red: 65280, pink: 56100, purple: 52180, violet: 47188, blue: 46920, turquoise: 31146, green: 25500, yellow: 12750, orange: 8618}
+		@mired_colors = {candle: 500, relax: 467, reading: 346, neutral: 300, concentrate: 231, energize: 136}
+		@scenes = [] ; HTTParty.get("http://#{@ip}/api/#{@user}/scenes").keys.each { |k| @scenes.push(k) }
+		@groups = {} ; HTTParty.get("http://#{@ip}/api/#{@user}/groups").each { |k,v| @groups["#{v['name']}".downcase] = k } ; @groups["all"] = "0"
+		@lights = {} ; HTTParty.get("http://#{@ip}/api/#{@user}/lights").each { |k,v| @lights["#{v['name']}".downcase] = k }
 	end
 end

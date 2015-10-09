@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hue_switch (1.0.3)
+    hue_switch (1.0.5)
       chronic (~> 0.10.0)
       chronic_duration (~> 0)
       httparty (~> 0.13.0)
@@ -10,7 +10,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (4.2.1)
+    activesupport (4.2.4)
       i18n (~> 0.7)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -25,7 +25,7 @@ GEM
       multi_xml (>= 0.5.2)
     i18n (0.7.0)
     json (1.8.3)
-    minitest (5.5.1)
+    minitest (5.8.0)
     multi_xml (0.5.5)
     numbers_in_words (0.2.0)
       activesupport
