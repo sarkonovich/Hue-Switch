@@ -85,7 +85,8 @@ class Switch
 	def lights(group_name)
 		self.lights_array = []
 		self.body.delete(:scene)
-		self._group = @groups[group_name.to_s]
+		group = @groups[group_name.to_s]
+		self._group = group if !group.nil?
 	end
 
 	def scene(scene_name)
@@ -153,7 +154,7 @@ class Switch
 		self.body[:on] = true if on_or_off == :on
 		self.body[:on] = false if on_or_off == :off
 		set_time = set_time(string)
-		if set_time < Time.now 
+		if set_time < Time.now
 			p "You've scheduled this in the past"
 		else
 			set_time = set_time.to_s.split(' ')[0..1].join(' ').sub(' ',"T")
