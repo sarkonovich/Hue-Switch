@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hue_switch (1.0.5)
+    hue_switch (1.0.6)
       chronic (~> 0.10.0)
       chronic_duration (~> 0)
       httparty (~> 0.13.0)
