@@ -105,9 +105,9 @@ switch.reset
 Switches can be scheduled:
 
 ```ruby
-switch.schedule :on, "eight thirty tonight"
-switch.schedule :on, "June 9 at 08:00"
-switch.schedule :off, "in three minutes"  # "tomorrow", "next week"
+switch.schedule "eight thirty tonight", :on
+switch.schedule "June 9 at 08:00", :on
+switch.schedule "in three minutes", :off  # "tomorrow", "next week"
 ```
 
 ####Delete the schedule(s) created by the switch:
